@@ -6,8 +6,11 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.List;
 import java.awt.RenderingHints;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Scanner;
+import java.util.Timer;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -20,12 +23,13 @@ public class Board extends JPanel {
 	
 	public final int HEIGHT = 800;
 	
-	public int countAlternator = 0;
+	private int countAlternator = 0;
 	
-	public int fillCount = 0;
+	private int fillCount = 0;
+	
+	//determines whether a single move is legal 
+    //ASSUMES it is determined that spot is a 0 (or empty)
 	public boolean isLegalMove (int row, int col, int num) {
-	        //determines whether a single move is legal 
-	        //ASSUMES it is determined that spot is a 0 (or empty)
 	        //check row
 	        for(int c = 0; c < nums[0].length; c++) {
 	            if(num == nums[row][c] && c != col)
@@ -82,9 +86,14 @@ public class Board extends JPanel {
 			}
 		}
 	}
-	//A solution based on the process of elimination and restriction
+	
+	
+	//Solves by checking whether a number exists as a single possibility in an entire row or column
+	//FUTURE: can add in local box check so that more complex puzzles can be solved
 	public void solve2 () throws InterruptedException {
 		//for each empty box, put the legal possibilities into an array list
+		//FUTURE: improve efficiency by focusing on which arrayLists of possibility you needed to update 
+		//based on location of the previous addedNumber
 		ArrayList<Integer>[][] pos = new ArrayList[9][9];
 		for(int row = 0; row < nums.length; row++) {
 			for(int col = 0; col < nums[0].length; col++) {
@@ -94,135 +103,72 @@ public class Board extends JPanel {
 						if(isLegalMove(row, col, counter))
 							pos[row][col].add(counter);
 					}
-					
-				}
-					
+				}		
 			}
 		}
-		//find needed nums in each column
-		ArrayList<Integer>[] neededInCol = new ArrayList[9];
-		for(int col = 0; col < nums[0].length; col++) {
-			neededInCol[col] = new ArrayList<Integer>();
-			for(int counter = 1; counter < 10; counter++) {
-				neededInCol[col].add(counter);
-			}
-			//removing existing numbers from neededInCol
-			//cannot remove by index due to multiple removals; must use search
-			for(int row = 0; row < nums.length; row++) {
-				if(nums[row][col] != 0) {
-					neededInCol[col].remove((Integer) nums[row][col]);
-				}
-			}
-		}
-		//check possibilities with needed nums in each column
-		//for now, only use the case where there is a num in possibilities that 
-		//is needed in col and not in any other possibilities
-		
-		
-		//find needed nums in each row
-		ArrayList<Integer>[] neededInRow = new ArrayList[9];
-		for(int row = 0; row < nums[0].length; row++) {
-			neededInRow[row] = new ArrayList<Integer>();
-			for(int counter = 1; counter < 10; counter++) {
-				neededInRow[row].add(counter);
-			}
-			//removing existing numbers from neededInCol
-			//cannot remove by index due to multiple removals; must use search
-			for(int col = 0; col < nums.length; col++) {
-				if(nums[row][col] != 0) {
-					neededInRow[row].remove((Integer) nums[row][col]);
-				}
-			}
-		}
-		//find needed nums in each local box
-		//local box is 2D array - 3 x 3
-		ArrayList<Integer>[][] neededInLocalBox = new ArrayList[3][3];
-		for(int r = 0; r < neededInLocalBox.length; r++) {
-			int startY = 3*r;
-			for(int c = 0; c < neededInLocalBox[0].length; c++) {
-				neededInLocalBox[r][c] = new ArrayList<Integer>();
-				for(int counter = 1; counter < 10; counter++) {
-					neededInLocalBox[r][c].add(counter);
-				}
-				int startX = 3*c;
-				for(int y = 0; y < 3; y++) {
-					int sumY = startY + y;
-					for(int x = 0; x < 3; x++) {
-						int sumX = startX + x;
-						if(nums[sumY][sumX] != 0)
-							neededInLocalBox[r][c].remove((Integer)nums[sumY][sumX]);
-					}
-				}
-			}
-		}
-		loop:
+		/*for each number in each array list of possibilities in each box, check whether it 
+		 * appears in an array list of possibilities in a different box of the same row, col, OR local box.
+		 * If not, add the number on the board through int[][]nums
+		 */
+		solver:
 		for(int row = 0; row < nums.length; row++) {
-			for(int col = 0; col < nums[0].length; col++) {
+			for(int col = 0; col <nums[0].length; col++) {
+				//Here - accessing a box of 9 x 9 boxes
 				if(nums[row][col] == 0) {
-					ArrayList<Integer> curPosibs = pos[row][col];
-					//check if array of pos in one box is of length one
-					if(curPosibs.size() == 1) {
-						fillCount++;
-						nums[row][col] = curPosibs.get(0);
+					if(pos[row][col].size() == 1) {
+						
+						nums[row][col] = pos[row][col].get(0);
 						repaint();
 						solve2();
-						break loop;
-						
+						break solver;
 					}
-					for(int curPos: curPosibs) {
-					 	//onlyOnce refers to one of multiple possibilities in a single square
-						boolean onlyOnce = true;	
-						//first, check each column so we increment over rows
-					 	
-					 	if(countAlternator == 0) {
-						 	column:
-						 	for(int r = 0; r < nums.length; r++) {
-						 		if(nums[r][col] == 0 && r != row) {
-						 			for(Integer i: pos[r][col]) {
-						 				if(curPos == (int)i) {
-						 					countAlternator++;
-						 					onlyOnce = false;
-						 					break column;
-						 				}
-						 			}
-						 		}
-						  	}
-					 	}
-					 	else {
-							//second, check each row so we increment over cols
-							System.out.println("reached");
-							row:
-							for(int c = 0; c < nums[0].length; c++) {
-						 		if(nums[row][c] == 0 && c != col) {
-						 			for(Integer i: pos[row][c]) {
-						 				if(curPos == (int)i) {
-						 					countAlternator = 0;
-						 					onlyOnce = false;
-						 					break row;
-						 				}
-						 			}
-						 		}
-						  	}
-					 	}
-						if(onlyOnce && fillCount < 67) {
-							fillCount++;
-							nums[row][col] = curPos;
-							//Thread.sleep(50);
+					for(Integer current: pos[row][col]) {
+						//Here - accessing an Integer, 1-9, that one possible legal move in an array of legal moves from an empty box
+						boolean appearsTwiceInCol = false;
+						boolean appearsTwiceInRow = false;
+						//check if current appears in pos for a column (col). If not, add to nums. If so, break
+						colChecker:
+						for(int r = 0; r < nums.length; r++) {
+							if(pos[r][col] != null && r != row) {
+								for(Integer checker: pos[r][col]) {
+									if(current == checker) {
+										appearsTwiceInCol = true;
+										break colChecker;
+									}
+								}
+							}
+						}
+						if(!appearsTwiceInCol) {
+							nums[row][col] = current;
 							repaint();
 							solve2();
-							break loop;
+							break solver;
 						}
-					 }
+						//In case colChecker didn't find if it appears twice in col, we try rowChecker
+						if (appearsTwiceInCol) {
+							//check if current appears in pos for a row. If not, add to nums. If so, break
+							rowChecker:
+							for(int c = 0; c < nums[0].length; c++) {
+								if(pos[row][c] != null && c != col) {
+									for(Integer checker: pos[row][c]) {
+										if(current == checker) {
+											appearsTwiceInRow = true;
+											break rowChecker;
+										}
+									}
+								}
+							}
+						}
+						if(!appearsTwiceInRow) {
+							nums[row][col] = current;
+							repaint();
+							solve2();
+							break solver;
+						}
+					}
 				}
-
 			}
 		}
-		System.out.println(pos[8][7]);
-		//find needed nums in row
-		//later make this an arrayList
-				
-		
-	
 	}
 	
 	public Board() {
@@ -238,7 +184,7 @@ public class Board extends JPanel {
 		nums = this.generateLegalBoard1();
 	}
 	
-	public static void main (String[] args) throws InterruptedException {
+	public static void main (String[] args) throws InterruptedException, FileNotFoundException {
 		System.out.println("Start!");
 		JFrame frame = new JFrame();
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -248,8 +194,21 @@ public class Board extends JPanel {
 		frame.pack();
 		frame.setVisible(true);
 		b.repaint();
-		b.solve2();
+		Thread.sleep(5000);
+		b.solve1();
 		b.repaint();
+		//reads from file containing a million puzzles
+		/*
+		Scanner s = new Scanner(new File("sudoku.csv"));
+		s.nextLine();
+		for(int x = 10000; x < 11000; x++) {
+			String str = s.nextLine().split(",")[0];
+			b.setNums(b.strToArr(str));
+			b.solve2();
+			b.repaint();
+			Thread.sleep(10);
+		}
+		*/
 		/*
 		Scanner s = new Scanner(System.in);
 		while(true) {
@@ -266,6 +225,20 @@ public class Board extends JPanel {
 		*/
 	}
 	
+	private int[][] strToArr(String str) {
+		int[][] hold = new int[9][9];
+		for(int row = 0; row < 9; row++) {
+			for(int col = 0; col < 9; col++) {
+				hold[row][col] = Integer.parseInt(str.substring(row*9+col, row*9 + col+1));
+			}
+		}
+		return hold;
+	}
+
+	private void setNums(int[][] i) {
+		this.nums = i;
+	}
+
 	public void update (String input) {
 		int comIndex = input.indexOf(",");
         int comIndex2 = input.lastIndexOf(",");
@@ -343,37 +316,35 @@ public class Board extends JPanel {
     
     public int[][] generateLegalBoard1 () {
     	int [][] hold = new int [9][9];
-    	hold[0][0] = 2;
-    	hold[1][0] = 9;
-    	hold[0][1] = 1;
+    	//world's hardest sudoku puzzle
+    	hold[0][0] = 8;
+    	hold[1][2] = 3;
+    	hold[2][1] = 7;
     	
-    	hold[2][3] = 7;
-    	hold[2][4] = 5;
-    	hold[0][4] = 4;
+    	hold[1][3] = 6;
+    	hold[2][4] = 9;
     	
-    	hold[0][7] = 3;
-    	hold[2][8] = 4;
+    	hold[2][6] = 2;
     	
-    	hold[5][0] = 7;
-    	hold[5][1] = 2;
+    	hold[3][1] = 5;
     	
-    	hold[5][3] = 5;
-    	hold[4][4] = 8;
+    	hold[3][5] = 7;
+    	hold[4][5] = 5;
+    	hold[4][4] = 4;
     	
-    	hold[4][6] = 4;
-    	hold[3][8] = 6;
-    	hold[4][8] = 1;
-    	hold[5][8] = 8;
+    	hold[4][6] = 7;
+    	hold[5][7] = 3;
     	
-    	hold[6][2] = 9;
-    	hold[7][2] = 4;
-    	hold[8][1] = 8;
+    	hold[6][2] = 1;
+    	hold[7][2] = 8;
+    	hold[8][1] = 9;
     	
-    	hold[6][7] = 2;
-    	hold[7][6] = 5;
-    	hold[8][6] = 6;
-    	hold[8][8] = 3;
+    	hold[7][3] = 5;
     	
+    	hold[6][7] = 6;
+    	hold[6][8] = 8;
+    	hold[7][7] = 1;
+    	hold[8][6] = 4;
     	return hold;
     	
     	
