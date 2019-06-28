@@ -22,11 +22,7 @@ public class Board extends JPanel {
 	public final int WIDTH = 800;
 	
 	public final int HEIGHT = 800;
-	
-	private int countAlternator = 0;
-	
-	private int fillCount = 0;
-	
+		
 	//determines whether a single move is legal 
     //ASSUMES it is determined that spot is a 0 (or empty)
 	public boolean isLegalMove (int row, int col, int num) {
@@ -192,6 +188,7 @@ public class Board extends JPanel {
 			String str = s.nextLine().split(",")[0];
 			b.setNums(b.strToArr(str));
 			b.solve1();
+			//b.solve2();
 			b.repaint();
 			//Thread.sleep(100);
 		}
