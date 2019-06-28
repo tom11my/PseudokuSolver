@@ -81,7 +81,6 @@ public class Board extends JPanel {
 						col--;
 					}
 					//Thread.sleep(1);
-					repaint();
 				}
 			}
 		}
@@ -118,7 +117,6 @@ public class Board extends JPanel {
 					if(pos[row][col].size() == 1) {
 						
 						nums[row][col] = pos[row][col].get(0);
-						repaint();
 						solve2();
 						break solver;
 					}
@@ -140,7 +138,6 @@ public class Board extends JPanel {
 						}
 						if(!appearsTwiceInCol) {
 							nums[row][col] = current;
-							repaint();
 							solve2();
 							break solver;
 						}
@@ -161,7 +158,6 @@ public class Board extends JPanel {
 						}
 						if(!appearsTwiceInRow) {
 							nums[row][col] = current;
-							repaint();
 							solve2();
 							break solver;
 						}
@@ -173,14 +169,6 @@ public class Board extends JPanel {
 	
 	public Board() {
 		nums = new int [9][9];
-		setUp();
-		
-		//System.out.println("solved");
-	}
-	
-	public void setUp () {
-		//random board is not necessarily legal if >9 nums generated
-		//this.generateRandomBoard2();
 		nums = this.generateLegalBoard1();
 	}
 	
@@ -198,17 +186,16 @@ public class Board extends JPanel {
 		b.solve1();
 		b.repaint();
 		//reads from file containing a million puzzles
-		/*
 		Scanner s = new Scanner(new File("sudoku.csv"));
 		s.nextLine();
-		for(int x = 10000; x < 11000; x++) {
+		for(int x = 1; x < 1000000; x++) {
 			String str = s.nextLine().split(",")[0];
 			b.setNums(b.strToArr(str));
-			b.solve2();
+			b.solve1();
 			b.repaint();
-			Thread.sleep(10);
+			//Thread.sleep(100);
 		}
-		*/
+		//For playing an actual game, rather than solving it
 		/*
 		Scanner s = new Scanner(System.in);
 		while(true) {
@@ -257,8 +244,6 @@ public class Board extends JPanel {
         }
 	}
 	
-	
-	
 	public Dimension getPreferredSize() {
 		return new Dimension (WIDTH, HEIGHT);
 	}
@@ -293,27 +278,6 @@ public class Board extends JPanel {
 		}
 	}
 	
-	
-	
-	//generates a random board and checks if it is legal after each addition
-    public  int[][] generateRandomBoard2() {
-        int [][] rand = new int[9][9];
-        int count = 0;
-        while(count < 60) {
-            int y = (int)(Math.random()*9);
-            int x = (int)(Math.random()*9);
-            int z = 1 + (int)(Math.random()*9);
-            //necessary for isLegalMove method in checking which spots are full
-            nums = rand;
-            if(nums[y][x] == 0 && isLegalMove(y, x, z)) {
-                rand[y][x] = z;
-                count++;
-            }
-        }
-        return rand;
-        
-    }
-    
     public int[][] generateLegalBoard1 () {
     	int [][] hold = new int [9][9];
     	//world's hardest sudoku puzzle
@@ -350,7 +314,6 @@ public class Board extends JPanel {
     	
     }
     
-   
     public static String removeSpaces (String input) {
         for(int x = input.length()-1; x >= 0; x--) {
             if(input.substring(x, x+1).equals(" "))
