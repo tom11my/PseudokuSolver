@@ -23,20 +23,15 @@ public class Board extends JPanel {
 	
 	public final int HEIGHT = 800;
 		
-	//determines whether a single move is legal 
-    //ASSUMES it is determined that spot is a 0 (or empty)
 	public boolean isLegalMove (int row, int col, int num) {
-	        //check row
 	        for(int c = 0; c < nums[0].length; c++) {
 	            if(num == nums[row][c] && c != col)
 	                return false;
 	        }
-	        //check col
 	        for(int r = 0; r < nums.length; r++) {
 	            if(num == nums[r][col] && r != row)
 	                return false;
 	        }
-	        //check local box
 	        int boxStartY = (row/3)*3;
 	        int boxStartX = (col/3)*3;
 	        for(int y = 0; y < 3; y++) {
@@ -52,7 +47,6 @@ public class Board extends JPanel {
 	
 	//Initial Solution - brute force - "backtracking"
 	public void solve1 () throws InterruptedException {
-		//list of locations where numbers were "guessed"
 		ArrayList<Loc> previousLocs = new ArrayList<Loc>();
 		int counter = 1;
 		for(int row = 0; row < nums.length; row++) {
@@ -84,9 +78,7 @@ public class Board extends JPanel {
 	
 	
 	//Solves by checking whether a number exists as a single possibility in an entire row or column
-	//FUTURE: can add in local box check so that more complex puzzles can be solved
 	public void solve2 () throws InterruptedException {
-		//for each empty box, put the legal possibilities into an array list
 		//FUTURE: improve efficiency by focusing on which arrayLists of possibility you needed to update 
 		//based on location of the previous addedNumber
 		ArrayList<Integer>[][] pos = new ArrayList[9][9];
@@ -108,7 +100,6 @@ public class Board extends JPanel {
 		solver:
 		for(int row = 0; row < nums.length; row++) {
 			for(int col = 0; col <nums[0].length; col++) {
-				//Here - accessing a box of 9 x 9 boxes
 				if(nums[row][col] == 0) {
 					if(pos[row][col].size() == 1) {
 						
@@ -117,10 +108,8 @@ public class Board extends JPanel {
 						break solver;
 					}
 					for(Integer current: pos[row][col]) {
-						//Here - accessing an Integer, 1-9, that one possible legal move in an array of legal moves from an empty box
 						boolean appearsTwiceInCol = false;
 						boolean appearsTwiceInRow = false;
-						//check if current appears in pos for a column (col). If not, add to nums. If so, break
 						colChecker:
 						for(int r = 0; r < nums.length; r++) {
 							if(pos[r][col] != null && r != row) {
@@ -137,9 +126,7 @@ public class Board extends JPanel {
 							solve2();
 							break solver;
 						}
-						//In case colChecker didn't find if it appears twice in col, we try rowChecker
 						if (appearsTwiceInCol) {
-							//check if current appears in pos for a row. If not, add to nums. If so, break
 							rowChecker:
 							for(int c = 0; c < nums[0].length; c++) {
 								if(pos[row][c] != null && c != col) {
